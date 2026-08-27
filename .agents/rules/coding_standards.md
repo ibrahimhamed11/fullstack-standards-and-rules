@@ -27,3 +27,21 @@ Always adhere strictly to these rules when writing or modifying code in this cod
 
 7. **Strict Separation of Concerns**:
    - Split complex features into: `<Feature>Page.tsx` (view), `use<Feature>Logic.ts` (logic), and `<Feature>.styles.ts` (styling).
+
+8. **NO Emojis or Static Icon Glyphs**:
+   - Not in UI, code, comments, commits, or docs. Use the project's icon component with a semantic name.
+
+9. **NO Gradients or Invented Colors**:
+   - Colors come from design-system tokens only. No hex/`rgba()` literals, no self-chosen palettes.
+
+10. **NO New Markdown Files**:
+   - Extend existing documentation. Create a new `.md` only when explicitly requested.
+
+11. **Minimal Comments**:
+   - Comment non-obvious intent only. No banners, no code narration, no commented-out blocks.
+
+12. **Delete Dead Code**:
+   - Remove unreachable code, unused imports/exports, and orphaned files in the same change.
+
+13. **Reuse on Second Use**:
+   - Needed in two or more files means one shared component, hook, or utility -- never a copy.

@@ -13,7 +13,7 @@ A centralized repository containing production-tested engineering rules, archite
 
 ## 📚 Table of Contents
 
-- [Core Principles](#-the-7-core-engineering-commandments)
+- [Core Principles](#-the-13-core-engineering-commandments)
 - [Neobit MCP Server & AI Skill Integration](#-neobit-mcp-server--ai-skill-integration)
 - [Documentation Index](#-documentation-index)
 - [Web & Frontend Standards](#-web--frontend-react-standards)
@@ -26,7 +26,7 @@ A centralized repository containing production-tested engineering rules, archite
 
 ---
 
-## ⚡ The 7 Core Engineering Commandments
+## ⚡ The 13 Core Engineering Commandments
 
 1. **ZERO Inline Styles**: No `style={{ ... }}` in JSX or TSX. Use modular styles, StyleSheet, or design token utilities.
 2. **ZERO Hardcoded Strings**: All user-facing strings must use internationalization (`i18n`).
@@ -35,6 +35,12 @@ A centralized repository containing production-tested engineering rules, archite
 5. **ZERO Component-Level Direction Overrides**: RTL/LTR must be driven globally by the root layout/theme.
 6. **ZERO `any` Types**: Strict TypeScript contracts for all DTOs, parameters, and responses.
 7. **Strict Separation of Concerns**: Divide features into UI Views, Logic Hooks, and Modular Styles.
+8. **ZERO Emojis & Decorative Icons**: No emojis or hardcoded icon glyphs in UI, code, comments, commits, or docs. Use the project's icon component with a semantic name.
+9. **ZERO Invented Colors & Gradients**: No gradients and no color that was not taken from the design system. Every color is a theme token traceable to the design source.
+10. **ZERO New Markdown Files**: Extend the documents that already exist. A new `.md` file is created only when explicitly requested.
+11. **Minimal Comments**: Comment only non-obvious *why*. No banners, no restating the code, no commented-out blocks.
+12. **Delete Dead Code**: Unreachable code, unused exports, and orphaned files are removed in the same change, not left behind.
+13. **Reuse Over Repetition**: Anything needed in two or more files becomes one shared component, hook, or utility.
 
 ---
 

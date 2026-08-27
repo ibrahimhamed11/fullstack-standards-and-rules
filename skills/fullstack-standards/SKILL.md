@@ -34,12 +34,20 @@ This skill provides an automated code quality engine and architectural blueprint
 - **High-Performance Lists**: Use `@shopify/flash-list` with `getItemLayout` (Never map in `<ScrollView>`).
 
 ### 3. Backend (Node.js / Express / NestJS)
-- **3-Layer Architecture**: Controller (HTTP) $\to$ Service (Business Logic) $\to$ Repository (Database).
+- **3-Layer Architecture**: Controller (HTTP) -> Service (Business Logic) -> Repository (Database).
 - **Multi-Provider AI Engine**: Provider abstraction (Claude / OpenAI / Gemini / Groq) with fallback retry.
 - **Background Schedulers**: Resilient `node-cron` / BullMQ services for market price polling, reports, and notification dispatches.
 - **Pre-signed Cloud Storage**: Direct-to-S3 uploads with `@aws-sdk/s3-request-presigner` and Sharp optimization.
 - **Code Hygiene & Janitors**: AST-based unused file discovery and console log stripping.
 - **Zod & Centralized Errors**: Strong input validation and custom `AppError` handling middleware.
+
+### 4. Universal (every stack)
+- **No Emojis / Static Icons**: Never in UI, code, comments, commits, or docs. Icons go through the project's icon component with a semantic name.
+- **No Gradients / Invented Colors**: Only design-system tokens. No hex or `rgba()` literals and no self-chosen palette.
+- **No New Markdown Files**: Extend the existing docs unless a new file is explicitly requested.
+- **Minimal Comments**: Explain why, never what. No banners, no commented-out code.
+- **Delete Dead Code**: Unreachable code, unused exports, and orphaned files are removed, not left behind.
+- **Reuse on Second Use**: Used in two or more files means one shared component, hook, or utility.
 
 ---
 
