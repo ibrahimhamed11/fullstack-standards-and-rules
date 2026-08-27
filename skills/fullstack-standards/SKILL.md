@@ -55,5 +55,12 @@ This skill provides an automated code quality engine and architectural blueprint
 This skill also operates as an MCP Server (`mcp-server/`) exposing:
 - `list_standards`: Query all available engineering rules.
 - `get_standard`: Get in-depth implementation rules and examples.
-- `audit_code_snippet`: Check code for rule violations.
-- `generate_template`: Generate standard-compliant boilerplate.
+- `audit_code_snippet`: Check a single snippet for rule violations.
+- `scan_project_structure`: Read a whole project's file structure and detected stack before changing anything.
+- `audit_project`: Audit every source file at once; returns violations by file and line, orphaned files, and reuse candidates.
+
+### Standard Working Order
+1. `scan_project_structure` to learn the stack and layout.
+2. `audit_project` to get the full violation set.
+3. Fix by rule, highest severity first, one rule per commit.
+4. Re-run `audit_project` to confirm the count dropped.

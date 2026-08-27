@@ -77,7 +77,11 @@ Add to your `mcp_config.json`:
 ### 3. Available `neobit` MCP Tools
 - `list_standards`: Lists all available engineering rules categorized by domain.
 - `get_standard(id)`: Returns full documentation and Good vs Bad examples for a specific rule.
-- `audit_code_snippet(code)`: Automated linter that scans code for inline styles, hardcoded text, raw URLs, and manual direction overrides.
+- `audit_code_snippet(code, filePath?)`: Automated linter for a single snippet. Reports rule id, severity, and line number.
+- `scan_project_structure(path)`: Walks a whole project and returns its detected stack, source/markdown file counts, and largest directories.
+- `audit_project(path, rule?)`: Audits every source file in a project against all rules at once. Returns per-file violations with line numbers, per-rule counts, orphaned files, reuse candidates, and markdown sprawl.
+
+Both project tools skip `node_modules`, `.git`, `dist`, `build`, `ios`, `android`, `Pods`, and other build output. The raw-color rule is exempt in theme/token files and in `assets/svgs`, where path fills are inherent to the asset.
 
 ### 4. Custom Skill for AI Agents
 - **Antigravity & Claude Skill**: `skills/fullstack-standards/SKILL.md` is ready to drop into `.agents/skills/`.

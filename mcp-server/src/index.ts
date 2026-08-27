@@ -4,6 +4,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
+import { extname, join, relative } from 'node:path';
 
 // Standards & Architecture Database
 const STANDARDS_DB: Record<
@@ -116,6 +118,205 @@ const STANDARDS_DB: Record<
   },
 };
 
+// Rule engine shared by snippet and project audits
+type Severity = 'BLOCKER' | 'WARNING';
+
+interface Rule {
+  id: string;
+  severity: Severity;
+  pattern: RegExp;
+  message: string;
+  skipFile?: RegExp;
+  requiresAbsent?: RegExp;
+}
+
+const RULES: Rule[] = [
+  {
+    id: 'no-inline-styles',
+    severity: 'BLOCKER',
+    pattern: /style\s*=\s*\{\{/,
+    message: 'Inline styles (`style={{ ... }}`). Extract to *.styles.ts or StyleSheet.create.',
+  },
+  {
+    id: 'no-component-dir',
+    severity: 'BLOCKER',
+    pattern: /dir\s*=\s*['"`](rtl|ltr)['"`]|direction\s*:\s*['"`](rtl|ltr)['"`]/,
+    message: 'Manual direction override. Let the root layout theme manage direction.',
+  },
+  {
+    id: 'centralized-endpoints',
+    severity: 'BLOCKER',
+    pattern: /(axios|fetch)\s*\.?\s*(get|post|put|patch|delete)?\s*\(\s*['"`](https?:)?\/api\//i,
+    message: 'Hardcoded API route. Reference ENDPOINTS from core/endpoints.ts.',
+  },
+  {
+    id: 'no-emojis-or-icon-glyphs',
+    severity: 'BLOCKER',
+    pattern: /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F2FF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/u,
+    message: 'Emoji or static icon glyph. Use the project icon component with a semantic name.',
+  },
+  {
+    id: 'no-gradients-or-invented-colors',
+    severity: 'BLOCKER',
+    pattern: /linear-gradient|radial-gradient|LinearGradient/,
+    message: 'Gradient. Use a flat design-system color token.',
+  },
+  {
+    id: 'no-raw-color-literals',
+    severity: 'BLOCKER',
+    pattern: /#[0-9a-fA-F]{3,8}\b|rgba?\s*\(/,
+    message: 'Raw color literal. Reference a theme token instead.',
+    skipFile: /theme|colors|tokens|palette|appStyles|assets\/svgs|\.svg\.tsx$/i,
+  },
+  {
+    id: 'minimal-comments',
+    severity: 'WARNING',
+    pattern: /^\s*\/\/\s*[=*-]{4,}|^\s*\/\/\s*(const|let|function|return|if|import|<)/m,
+    message: 'Banner comment or commented-out code. Keep comments intent-only, delete dead code.',
+  },
+  {
+    id: 'no-static-text',
+    severity: 'WARNING',
+    pattern: />[A-Za-z؀-ۿ]{3,}[^<{]*</,
+    message: 'Potential static text in JSX. Wrap user-facing strings in t("key").',
+    requiresAbsent: /\bt\(|i18n\.t\(/,
+  },
+  {
+    id: 'no-any-types',
+    severity: 'WARNING',
+    pattern: /:\s*any\b|as\s+any\b/,
+    message: 'Explicit `any`. Declare a strict type or DTO.',
+  },
+];
+
+interface Finding {
+  rule: string;
+  severity: Severity;
+  line: number;
+  message: string;
+}
+
+function auditCode(code: string, filePath = ''): Finding[] {
+  const lines = code.split('\n');
+  const findings: Finding[] = [];
+
+  for (const rule of RULES) {
+    if (rule.skipFile?.test(filePath)) continue;
+    if (!rule.pattern.test(code)) continue;
+    if (rule.requiresAbsent?.test(code)) continue;
+
+    const single = new RegExp(rule.pattern.source, rule.pattern.flags.replace('m', ''));
+    const idx = lines.findIndex(l => single.test(l));
+    findings.push({ rule: rule.id, severity: rule.severity, line: idx + 1, message: rule.message });
+  }
+
+  return findings;
+}
+
+const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx']);
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', 'coverage', '.next', 'ios', 'android',
+  'patched_node_modules', '__generated__', '.expo', 'vendor', 'Pods',
+]);
+const MAX_LISTED_FILES = 100;
+
+function walkProject(root: string): { source: string[]; markdown: string[] } {
+  const source: string[] = [];
+  const markdown: string[] = [];
+
+  const visit = (dir: string) => {
+    let entries: string[];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.startsWith('.') && entry !== '.agents') continue;
+      const full = join(dir, entry);
+      let isDir: boolean;
+      try {
+        isDir = statSync(full).isDirectory();
+      } catch {
+        continue;
+      }
+      if (isDir) {
+        if (!SKIP_DIRS.has(entry)) visit(full);
+        continue;
+      }
+      const ext = extname(entry);
+      if (SOURCE_EXT.has(ext)) source.push(relative(root, full));
+      else if (ext === '.md') markdown.push(relative(root, full));
+    }
+  };
+
+  visit(root);
+  return { source, markdown };
+}
+
+function detectStack(root: string): string[] {
+  const pkgPath = join(root, 'package.json');
+  if (!existsSync(pkgPath)) return ['unknown'];
+  let deps: Record<string, string> = {};
+  try {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  } catch {
+    return ['unknown'];
+  }
+  const stack: string[] = [];
+  if (deps['react-native']) stack.push('React Native');
+  if (deps['next']) stack.push('Next.js');
+  if (deps['react'] && !deps['react-native'] && !deps['next']) stack.push('React (web)');
+  if (deps['express'] || deps['@nestjs/core']) stack.push('Node backend');
+  if (deps['@reduxjs/toolkit']) stack.push('Redux Toolkit');
+  if (deps['zustand']) stack.push('Zustand');
+  if (deps['@tanstack/react-query']) stack.push('TanStack Query');
+  return stack.length ? stack : ['unknown'];
+}
+
+// Files whose basename is never referenced by an import elsewhere
+function findOrphans(root: string, source: string[]): string[] {
+  const imported = new Set<string>();
+  for (const file of source) {
+    let code: string;
+    try {
+      code = readFileSync(join(root, file), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const match of code.matchAll(/(?:from|require\()\s*['"`]([^'"`]+)['"`]/g)) {
+      const spec = match[1];
+      imported.add(spec.split('/').pop()!.replace(/\.(t|j)sx?$/, ''));
+    }
+  }
+  return source.filter(file => {
+    const name = file.split('/').pop()!.replace(/\.(t|j)sx?$/, '');
+    if (name === 'index' || /^(App|main|server|jest\.config|metro\.config)$/.test(name)) return false;
+    return !imported.has(name);
+  });
+}
+
+// Same component or hook name declared in more than one file
+function findReuseCandidates(root: string, source: string[]): Record<string, string[]> {
+  const declared: Record<string, string[]> = {};
+  for (const file of source) {
+    let code: string;
+    try {
+      code = readFileSync(join(root, file), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const match of code.matchAll(/(?:function|const)\s+([A-Z][A-Za-z0-9]+|use[A-Z][A-Za-z0-9]+)\s*[=(<]/g)) {
+      const name = match[1];
+      (declared[name] ||= []).push(file);
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(declared).filter(([, files]) => new Set(files).size > 1)
+  );
+}
+
 // Initialize MCP Server
 const server = new Server(
   {
@@ -161,6 +362,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'scan_project_structure',
+        description: 'Walks a project directory and returns its detected stack, source/markdown file counts, and the largest directories.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'Absolute path to the project root. Defaults to the working directory.',
+            },
+          },
+        },
+      },
+      {
+        name: 'audit_project',
+        description: 'Audits every source file in a project against all standards. Returns per-file violations, per-rule counts, orphaned files, reuse candidates, and markdown sprawl.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'Absolute path to the project root. Defaults to the working directory.',
+            },
+            rule: {
+              type: 'string',
+              description: 'Optional single rule id to audit (e.g. no-emojis-or-icon-glyphs).',
+            },
+          },
+        },
+      },
+      {
         name: 'audit_code_snippet',
         description: 'Audits a code snippet for anti-patterns (inline styles, hardcoded text, raw URLs, dir overrides).',
         inputSchema: {
@@ -169,6 +400,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             code: {
               type: 'string',
               description: 'The code snippet to analyze',
+            },
+            filePath: {
+              type: 'string',
+              description: 'Optional file path, used to skip file-scoped exemptions such as theme token files.',
             },
           },
           required: ['code'],
@@ -209,44 +444,110 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
 
   if (name === 'audit_code_snippet') {
     const code = (args?.code as string) || '';
-    const violations: string[] = [];
+    const findings = auditCode(code, (args?.filePath as string) || '');
 
-    if (/style\s*=\s*\{\{/i.test(code)) {
-      violations.push('❌ [BLOCKER] Inline styles detected (`style={{ ... }}`). Extract to *.styles.ts or StyleSheet.create.');
-    }
-    if (/dir\s*=\s*['"`](rtl|ltr)['"`]/i.test(code) || /direction\s*:\s*['"`](rtl|ltr)['"`]/i.test(code)) {
-      violations.push('❌ [BLOCKER] Manual direction override detected (`dir="rtl/ltr"`). Let root layout theme manage direction.');
-    }
-    if (/axios\.(get|post|put|delete)\s*\(\s*['"`]\/api\//i.test(code) || /fetch\s*\(\s*['"`]\/api\//i.test(code)) {
-      violations.push('❌ [BLOCKER] Hardcoded API route detected. Reference ENDPOINTS from core/endpoints.ts.');
-    }
-    if (/[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F2FF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/u.test(code)) {
-      violations.push('\u274C [BLOCKER] Emoji or static icon glyph detected. Use the project icon component with a semantic name.');
-    }
-    if (/linear-gradient|radial-gradient|LinearGradient/i.test(code)) {
-      violations.push('\u274C [BLOCKER] Gradient detected. Use a flat design-system color token.');
-    }
-    if (/#[0-9a-f]{3,8}\b|rgba?\s*\(/i.test(code)) {
-      violations.push('\u274C [BLOCKER] Raw color literal detected. Reference a theme token instead.');
-    }
-    if (/^\s*\/\/\s*[=*-]{4,}/m.test(code) || /^\s*\/\/\s*(const|let|function|return|if|import|<)/m.test(code)) {
-      violations.push('\u26A0\uFE0F [WARNING] Banner comment or commented-out code detected. Keep comments intent-only and delete dead code.');
-    }
-    if (/>[A-Za-z\u0600-\u06FF]{3,}[^<]*</i.test(code) && !/t\(/.test(code)) {
-      violations.push('⚠️ [WARNING] Potential static text detected in JSX. Ensure user-facing strings use t("key", "Text").');
+    if (findings.length === 0) {
+      return { content: [{ type: 'text', text: 'Audit passed: no violations detected.' }] };
     }
 
-    if (violations.length === 0) {
-      return {
-        content: [{ type: 'text', text: '✅ Audit Passed: Code conforms to all full-stack engineering standards!' }],
-      };
+    const text = findings
+      .map(f => `[${f.severity}] ${f.rule} (line ${f.line}): ${f.message}`)
+      .join('\n');
+    return { content: [{ type: 'text', text: `Found ${findings.length} violation(s):\n\n${text}` }] };
+  }
+
+  if (name === 'scan_project_structure') {
+    const root = (args?.path as string) || process.cwd();
+    if (!existsSync(root)) {
+      return { content: [{ type: 'text', text: `Path not found: ${root}` }], isError: true };
+    }
+
+    const { source, markdown } = walkProject(root);
+    const byDir: Record<string, number> = {};
+    for (const file of source) {
+      const dir = file.split('/').slice(0, 2).join('/') || '.';
+      byDir[dir] = (byDir[dir] || 0) + 1;
     }
 
     return {
       content: [
         {
           type: 'text',
-          text: `Found ${violations.length} violation(s):\n\n` + violations.join('\n\n'),
+          text: JSON.stringify(
+            {
+              root,
+              stack: detectStack(root),
+              sourceFiles: source.length,
+              markdownFiles: markdown.length,
+              markdown,
+              topDirectories: Object.fromEntries(
+                Object.entries(byDir).sort((a, b) => b[1] - a[1]).slice(0, 25)
+              ),
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+
+  if (name === 'audit_project') {
+    const root = (args?.path as string) || process.cwd();
+    if (!existsSync(root)) {
+      return { content: [{ type: 'text', text: `Path not found: ${root}` }], isError: true };
+    }
+    const ruleFilter = args?.rule as string | undefined;
+
+    const { source, markdown } = walkProject(root);
+    const byRule: Record<string, number> = {};
+    const files: { file: string; violations: Finding[] }[] = [];
+
+    for (const file of source) {
+      let code: string;
+      try {
+        code = readFileSync(join(root, file), 'utf8');
+      } catch {
+        continue;
+      }
+      const findings = auditCode(code, file).filter(f => !ruleFilter || f.rule === ruleFilter);
+      if (!findings.length) continue;
+      for (const f of findings) byRule[f.rule] = (byRule[f.rule] || 0) + 1;
+      files.push({ file, violations: findings });
+    }
+
+    files.sort((a, b) => b.violations.length - a.violations.length);
+    const orphans = findOrphans(root, source);
+    const reuse = findReuseCandidates(root, source);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              root,
+              stack: detectStack(root),
+              filesScanned: source.length,
+              filesWithViolations: files.length,
+              byRule,
+              projectChecks: {
+                markdownFileCount: markdown.length,
+                markdownSprawl: markdown.length > 5 ? markdown : [],
+                orphanedFiles: orphans.slice(0, MAX_LISTED_FILES),
+                orphanedFileCount: orphans.length,
+                reuseCandidates: Object.fromEntries(Object.entries(reuse).slice(0, 25)),
+                reuseCandidateCount: Object.keys(reuse).length,
+              },
+              files: files.slice(0, MAX_LISTED_FILES),
+              listTruncated:
+                files.length > MAX_LISTED_FILES
+                  ? `${files.length - MAX_LISTED_FILES} more offending file(s) not listed`
+                  : null,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -259,7 +560,7 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Full-Stack Standards MCP Server running on stdio');
+  console.error('neobit standards MCP server running on stdio');
 }
 
 main().catch(error => {
