@@ -4,10 +4,12 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
 
-// Standards Database
-const STANDARDS_DB: Record<string, { title: string; category: string; description: string; rule: string; goodExample: string; badExample: string }> = {
+// Standards & Architecture Database
+const STANDARDS_DB: Record<
+  string,
+  { title: string; category: string; description: string; rule: string; goodExample: string; badExample: string }
+> = {
   'no-inline-styles': {
     title: 'Zero Inline Styles',
     category: 'Frontend & Mobile',
@@ -40,6 +42,22 @@ const STANDARDS_DB: Record<string, { title: string; category: string; descriptio
     badExample: '<Card dir="ltr"><Box sx={{ direction: "rtl" }}>...</Box></Card>',
     goodExample: '<Card><Box>...</Box></Card>',
   },
+  'offline-first-sqlite': {
+    title: 'Offline-First SQLite Architecture',
+    category: 'Mobile (React Native)',
+    description: 'Use fast embedded SQLite for instant zero-latency local operations.',
+    rule: 'Store user data in op-sqlite with an action queue for background syncing with the REST backend.',
+    badExample: 'Fetching data over network on every screen focus without local persistence',
+    goodExample: 'Query local SQLite table first, render UI instantly, trigger background sync in parallel.',
+  },
+  'ai-multi-provider': {
+    title: 'Multi-Provider AI Architecture',
+    category: 'Backend & AI',
+    description: 'Abstract LLM providers with automatic fallback and failover.',
+    rule: 'Implement an AIProvider interface for Claude, Gemini, OpenAI, and Groq with fallback orchestration.',
+    badExample: 'Direct hardcoded single SDK calls with no retry or provider failover',
+    goodExample: 'AIService trying primary provider (Gemini) -> fallback (Claude) -> secondary fallback (OpenAI)',
+  },
   'node-layered-architecture': {
     title: '3-Layer Backend Architecture',
     category: 'Backend',
@@ -54,7 +72,7 @@ const STANDARDS_DB: Record<string, { title: string; category: string; descriptio
 const server = new Server(
   {
     name: 'fullstack-standards-mcp',
-    version: '1.0.0',
+    version: '1.1.0',
   },
   {
     capabilities: {
@@ -75,7 +93,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             category: {
               type: 'string',
-              description: 'Optional filter by category (Frontend, Mobile, Backend, API)',
+              description: 'Optional filter by category (Frontend, Mobile, Backend, API, AI)',
             },
           },
         },
@@ -88,7 +106,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             id: {
               type: 'string',
-              description: 'Standard ID (e.g. no-inline-styles, no-static-text, centralized-endpoints, no-component-dir, node-layered-architecture)',
+              description: 'Standard ID (e.g. no-inline-styles, offline-first-sqlite, ai-multi-provider, node-layered-architecture)',
             },
           },
           required: ['id'],

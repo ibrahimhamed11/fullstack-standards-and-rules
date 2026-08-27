@@ -1,21 +1,22 @@
 ---
 name: fullstack-standards
-description: Universal Full-Stack Engineering Standards, Architecture Blueprints, and Code Review Enforcer for React, React Native, Node.js, and TypeScript.
+description: Universal Full-Stack Engineering Standards, Multi-Provider AI Architecture, and Code Review Enforcer for React, React Native, Node.js, and TypeScript.
 ---
 
 # Full-Stack Engineering Standards & Architectural Skill
 
-This skill provides an automated code quality engine and architectural guide for designing, reviewing, and modernizing full-stack applications.
+This skill provides an automated code quality engine and architectural blueprints for designing, reviewing, and modernizing full-stack web, mobile, and backend systems.
 
 ## When to Activate This Skill
 - Designing new feature modules or refactoring legacy codebases.
+- Implementing AI engines (Gemini, Claude, OpenAI, Groq) with provider failover.
+- Setting up offline-first mobile databases (SQLite/op-sqlite), Zustand stores, or RevenueCat IAP.
 - Reviewing Pull Requests or auditing code for anti-patterns.
-- Setting up API layers, state management, or theming (RTL/LTR).
-- Implementing React, React Native, or Node.js features.
+- Architecting Node.js backend services, S3 pre-signed uploads, and background schedulers.
 
 ---
 
-## ⚡ Non-Negotiable Review Rules
+## ⚡ Core Domain Blueprints
 
 ### 1. Web (React / Next.js)
 - **NO Inline Styles**: Always extract styling to `<Component>.styles.ts` with `SxProps` or `styled()`.
@@ -26,15 +27,18 @@ This skill provides an automated code quality engine and architectural guide for
 
 ### 2. Mobile (React Native / Expo)
 - **`StyleSheet.create` Only**: Never pass raw inline style objects to JSX.
+- **Offline-First SQLite Architecture**: High-performance local caching using `@op-engineering/op-sqlite` + sync queues.
+- **Zustand Domain Stores**: Slice global state into isolated domain stores (`authStore`, `balanceStore`, `offlineQueueStore`).
 - **Bi-directional Layout**: Use `I18nManager.isRTL` with `marginStart`, `marginEnd`, `paddingStart`.
-- **High-Performance Lists**: Use `@shopify/flash-list` or `<FlatList>` with `getItemLayout` (Never map in `<ScrollView>`).
-- **Safe Area**: Wrap screens with `useSafeAreaInsets()` / `SafeAreaProvider`.
+- **High-Performance Lists**: Use `@shopify/flash-list` with `getItemLayout` (Never map in `<ScrollView>`).
 
 ### 3. Backend (Node.js / Express / NestJS)
 - **3-Layer Architecture**: Controller (HTTP) $\to$ Service (Business Logic) $\to$ Repository (Database).
-- **Zod Validation**: Validate all request body, params, and queries at the controller edge.
-- **Centralized Errors**: Throw custom `AppError` instances, caught by the global error middleware.
-- **Security**: Always enable `helmet`, CORS whitelist, rate limiting, and structured JSON logs.
+- **Multi-Provider AI Engine**: Provider abstraction (Claude / OpenAI / Gemini / Groq) with prompt localization, context sanitization, and fallback retry.
+- **Background Schedulers**: Resilient `node-cron` / BullMQ services for market price polling, reports, and notification dispatches.
+- **Pre-signed Cloud Storage**: Direct-to-S3 uploads with `@aws-sdk/s3-request-presigner` and Sharp optimization.
+- **RevenueCat Subscriptions**: Webhook-driven entitlement synchronization and tier verification.
+- **Zod & Centralized Errors**: Strong input validation and custom `AppError` handling middleware.
 
 ---
 

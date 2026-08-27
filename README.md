@@ -19,9 +19,10 @@ A centralized repository containing production-tested engineering rules, archite
 - [Web & Frontend Standards](#-web--frontend-react-standards)
 - [Mobile & React Native Standards](#-mobile--react-native-standards)
 - [Backend & Node.js Standards](#-backend--nodejs-standards)
+- [Multi-Provider AI Architecture](#-ai--multi-provider-architecture)
+- [Background Schedulers & Cron Jobs](#-schedulers--cron-jobs)
 - [API Layer & Network Architecture](#-api-layer--network-architecture)
 - [State Management & Caching](#-state-management--caching)
-- [Testing & CI/CD Pipeline](#-testing--cicd-standards)
 - [Code Review Checklist](#-code-review-checklist)
 
 ---
@@ -70,10 +71,12 @@ Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
 | Guide | Description |
 |---|---|
 | 📄 [Frontend React Standards](rules/FRONTEND_REACT_STANDARDS.md) | Web rules: No inline styles, i18n, Emotion/MUI modular styles, CSS logical properties. |
-| 📄 [React Native Standards](rules/MOBILE_REACT_NATIVE_STANDARDS.md) | Mobile rules: `StyleSheet.create`, `I18nManager`, FlashList, Safe Area, Memory management. |
+| 📄 [React Native Standards](rules/MOBILE_REACT_NATIVE_STANDARDS.md) | Mobile rules: `StyleSheet.create`, SQLite offline-first, `I18nManager`, FlashList, Safe Area. |
 | 📄 [Backend Node.js Standards](rules/BACKEND_NODE_STANDARDS.md) | Node.js rules: Clean Architecture (Controller-Service-Repo), Zod validation, Error handling, Security. |
+| 📄 [Multi-Provider AI Architecture](rules/AI_AND_MULTI_PROVIDER_ARCHITECTURE.md) | Agnostic LLM engine with Claude, Gemini, OpenAI, Groq fallback and context sanitization. |
+| 📄 [Schedulers & Background Cron Jobs](rules/CRON_JOBS_AND_BACKGROUND_WORKERS.md) | Clean cron architectures, rate syncing, notification dispatchers, and distributed locks. |
 | 📄 [API & Network Architecture](rules/API_ARCHITECTURE_AND_ENDPOINTS.md) | Domain-driven API modules, Axios singleton, Interceptors, Zero-breakage shim strategy. |
-| 📄 [State Management & Caching](rules/STATE_MANAGEMENT_AND_CACHING.md) | TanStack Query, Zustand, RTK Query, Redis cache-aside patterns. |
+| 📄 [State Management & Caching](rules/STATE_MANAGEMENT_AND_CACHING.md) | TanStack Query, Zustand stores, RTK Query, Redis cache-aside patterns. |
 | 📄 [Testing & CI/CD Pipeline](rules/TESTING_AND_CI_CD_STANDARDS.md) | Vitest, React Testing Library, Playwright, GitHub Actions workflow. |
 | 📄 [Code Review Checklist](rules/CODE_REVIEW_CHECKLIST.md) | Actionable PR reviewer checklist and automated CI/CD quality gates. |
 
@@ -83,26 +86,28 @@ Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
 
 ```
 ├── rules/
-│   ├── FRONTEND_REACT_STANDARDS.md     # React (Vite / Next.js / MUI / Tailwind)
-│   ├── MOBILE_REACT_NATIVE_STANDARDS.md# React Native & Expo
-│   ├── BACKEND_NODE_STANDARDS.md       # Node.js, Express & NestJS
-│   ├── API_ARCHITECTURE_AND_ENDPOINTS.md # Domain-driven API Layer
-│   ├── STATE_MANAGEMENT_AND_CACHING.md # TanStack Query, Zustand & Redis
-│   ├── TESTING_AND_CI_CD_STANDARDS.md  # Testing pyramid & GitHub Actions
-│   └── CODE_REVIEW_CHECKLIST.md        # PR Review Rules & Severity Matrix
-├── mcp-server/                         # Model Context Protocol Server
-│   ├── src/index.ts                    # MCP Server implementation
+│   ├── FRONTEND_REACT_STANDARDS.md         # React (Vite / Next.js / MUI / Tailwind)
+│   ├── MOBILE_REACT_NATIVE_STANDARDS.md    # React Native, Expo & SQLite
+│   ├── BACKEND_NODE_STANDARDS.md           # Node.js, Express & NestJS
+│   ├── AI_AND_MULTI_PROVIDER_ARCHITECTURE.md # Multi-Model AI Engine & Failover
+│   ├── CRON_JOBS_AND_BACKGROUND_WORKERS.md # Scheduler patterns & Background Tasks
+│   ├── API_ARCHITECTURE_AND_ENDPOINTS.md   # Domain-driven API Layer
+│   ├── STATE_MANAGEMENT_AND_CACHING.md     # Zustand, React Query & Redis
+│   ├── TESTING_AND_CI_CD_STANDARDS.md      # Testing pyramid & GitHub Actions
+│   └── CODE_REVIEW_CHECKLIST.md            # PR Review Rules & Severity Matrix
+├── mcp-server/                             # Model Context Protocol Server
+│   ├── src/index.ts                        # MCP Server implementation
 │   ├── package.json
 │   └── tsconfig.json
 ├── skills/
 │   └── fullstack-standards/
-│       └── SKILL.md                    # Antigravity & Claude Custom Skill
+│       └── SKILL.md                        # Antigravity & Claude Custom Skill
 ├── templates/
 │   ├── frontend/api-module-template.ts
 │   ├── react-native/screen-template.tsx
 │   └── backend/controller-service.ts
-├── CLAUDE.md                           # Claude Code system prompt instructions
-└── .agents/rules/coding_standards.md   # Agent workspace rules
+├── CLAUDE.md                               # Claude Code system prompt instructions
+└── .agents/rules/coding_standards.md       # Agent workspace rules
 ```
 
 ---
