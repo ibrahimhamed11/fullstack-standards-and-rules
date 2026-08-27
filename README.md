@@ -5,21 +5,24 @@
 [![React](https://img.shields.io/badge/React-18%2F19-61dafb.svg)](#)
 [![React Native](https://img.shields.io/badge/React%20Native-Cross--Platform-61dafb.svg)](#)
 [![Node.js](https://img.shields.io/badge/Node.js-Backend-green.svg)](#)
+[![MCP Server](https://img.shields.io/badge/MCP-Ready-purple.svg)](#)
 
-A centralized repository containing production-tested engineering rules, architecture blueprints, code review checklists, and reusable templates for **Web (React/Next.js)**, **Mobile (React Native/Expo)**, and **Backend (Node.js/Express/NestJS)** projects.
+A centralized repository containing production-tested engineering rules, architecture blueprints, code review checklists, starter templates, and an **MCP Server / Skill** for **Web (React/Next.js)**, **Mobile (React Native/Expo)**, and **Backend (Node.js/Express/NestJS)** projects.
 
 ---
 
 ## 📚 Table of Contents
 
 - [Core Principles](#-the-7-core-engineering-commandments)
+- [MCP Server & AI Skill Integration](#-mcp-server--ai-skill-integration)
 - [Documentation Index](#-documentation-index)
 - [Web & Frontend Standards](#-web--frontend-react-standards)
 - [Mobile & React Native Standards](#-mobile--react-native-standards)
 - [Backend & Node.js Standards](#-backend--nodejs-standards)
 - [API Layer & Network Architecture](#-api-layer--network-architecture)
-- [Code Review & PR Checklist](#-code-review--pr-checklist)
-- [Starter Templates](#-starter-templates)
+- [State Management & Caching](#-state-management--caching)
+- [Testing & CI/CD Pipeline](#-testing--cicd-standards)
+- [Code Review Checklist](#-code-review-checklist)
 
 ---
 
@@ -35,6 +38,33 @@ A centralized repository containing production-tested engineering rules, archite
 
 ---
 
+## 🤖 MCP Server & AI Skill Integration
+
+### 1. Using with Claude Code / Claude Desktop
+Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "fullstack-standards": {
+      "command": "node",
+      "args": ["/path/to/fullstack-standards-and-rules/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+### 2. Available MCP Tools
+- `list_standards`: Lists all available engineering rules categorized by domain.
+- `get_standard(id)`: Returns full documentation and Good vs Bad examples for a specific rule.
+- `audit_code_snippet(code)`: Automated linter that scans code for inline styles, hardcoded text, raw URLs, and manual direction overrides.
+
+### 3. Using with Google Antigravity & Claude Code
+- **Antigravity Custom Skill**: `skills/fullstack-standards/SKILL.md` is ready to drop into `.agents/skills/`.
+- **Claude Code Standards**: `CLAUDE.md` can be copied directly to project roots to enforce rules during code generation.
+
+---
+
 ## 📂 Documentation Index
 
 | Guide | Description |
@@ -43,6 +73,8 @@ A centralized repository containing production-tested engineering rules, archite
 | 📄 [React Native Standards](rules/MOBILE_REACT_NATIVE_STANDARDS.md) | Mobile rules: `StyleSheet.create`, `I18nManager`, FlashList, Safe Area, Memory management. |
 | 📄 [Backend Node.js Standards](rules/BACKEND_NODE_STANDARDS.md) | Node.js rules: Clean Architecture (Controller-Service-Repo), Zod validation, Error handling, Security. |
 | 📄 [API & Network Architecture](rules/API_ARCHITECTURE_AND_ENDPOINTS.md) | Domain-driven API modules, Axios singleton, Interceptors, Zero-breakage shim strategy. |
+| 📄 [State Management & Caching](rules/STATE_MANAGEMENT_AND_CACHING.md) | TanStack Query, Zustand, RTK Query, Redis cache-aside patterns. |
+| 📄 [Testing & CI/CD Pipeline](rules/TESTING_AND_CI_CD_STANDARDS.md) | Vitest, React Testing Library, Playwright, GitHub Actions workflow. |
 | 📄 [Code Review Checklist](rules/CODE_REVIEW_CHECKLIST.md) | Actionable PR reviewer checklist and automated CI/CD quality gates. |
 
 ---
@@ -55,26 +87,23 @@ A centralized repository containing production-tested engineering rules, archite
 │   ├── MOBILE_REACT_NATIVE_STANDARDS.md# React Native & Expo
 │   ├── BACKEND_NODE_STANDARDS.md       # Node.js, Express & NestJS
 │   ├── API_ARCHITECTURE_AND_ENDPOINTS.md # Domain-driven API Layer
+│   ├── STATE_MANAGEMENT_AND_CACHING.md # TanStack Query, Zustand & Redis
+│   ├── TESTING_AND_CI_CD_STANDARDS.md  # Testing pyramid & GitHub Actions
 │   └── CODE_REVIEW_CHECKLIST.md        # PR Review Rules & Severity Matrix
+├── mcp-server/                         # Model Context Protocol Server
+│   ├── src/index.ts                    # MCP Server implementation
+│   ├── package.json
+│   └── tsconfig.json
+├── skills/
+│   └── fullstack-standards/
+│       └── SKILL.md                    # Antigravity & Claude Custom Skill
 ├── templates/
-│   ├── frontend/
-│   │   └── api-module-template.ts      # Domain API module template
-│   ├── react-native/
-│   │   └── screen-template.tsx         # Clean React Native screen template
-│   └── backend/
-│       └── controller-service.ts       # Clean Node.js controller & service template
-└── .agents/
-    └── rules/
-        └── coding_standards.md         # Ready-to-use AI Agent instructions
+│   ├── frontend/api-module-template.ts
+│   ├── react-native/screen-template.tsx
+│   └── backend/controller-service.ts
+├── CLAUDE.md                           # Claude Code system prompt instructions
+└── .agents/rules/coding_standards.md   # Agent workspace rules
 ```
-
----
-
-## 🚀 How to Use in Your Projects
-
-1. **For Team Onboarding**: Share this repository with new developers as the canonical engineering standard.
-2. **For PR Reviews**: Link to specific rules in [Code Review Checklist](rules/CODE_REVIEW_CHECKLIST.md) when requesting changes.
-3. **For AI Agents (Antigravity, Cursor, Copilot)**: Copy `.agents/rules/coding_standards.md` into your project's `.agents/rules/` directory to automatically enforce these rules during AI generation.
 
 ---
 
