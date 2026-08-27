@@ -1,6 +1,6 @@
 {
-  "name": "fullstack-standards-mcp",
-  "version": "1.0.0",
+  "name": "neobit-mcp",
+  "version": "1.2.0",
   "description": "Model Context Protocol (MCP) Server for Full-Stack Standards & Code Review Rules",
   "main": "dist/index.js",
   "type": "module",

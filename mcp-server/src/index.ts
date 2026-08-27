@@ -71,8 +71,8 @@ const STANDARDS_DB: Record<
 // Initialize MCP Server
 const server = new Server(
   {
-    name: 'fullstack-standards-mcp',
-    version: '1.1.0',
+    name: 'neobit',
+    version: '1.2.0',
   },
   {
     capabilities: {
