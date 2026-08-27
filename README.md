@@ -5,16 +5,16 @@
 [![React](https://img.shields.io/badge/React-18%2F19-61dafb.svg)](#)
 [![React Native](https://img.shields.io/badge/React%20Native-Cross--Platform-61dafb.svg)](#)
 [![Node.js](https://img.shields.io/badge/Node.js-Backend-green.svg)](#)
-[![MCP Server](https://img.shields.io/badge/MCP-Ready-purple.svg)](#)
+[![MCP Server](https://img.shields.io/badge/MCP-Neobit-purple.svg)](#)
 
-A centralized repository containing production-tested engineering rules, architecture blueprints, code review checklists, starter templates, and an **MCP Server / Skill** for **Web (React/Next.js)**, **Mobile (React Native/Expo)**, and **Backend (Node.js/Express/NestJS)** projects.
+A centralized repository containing production-tested engineering rules, architecture blueprints, code review checklists, starter templates, and the **`neobit` MCP Server & Skill** for **Web (React/Next.js)**, **Mobile (React Native/Expo)**, and **Backend (Node.js/Express/NestJS)** projects.
 
 ---
 
 ## 📚 Table of Contents
 
 - [Core Principles](#-the-7-core-engineering-commandments)
-- [MCP Server & AI Skill Integration](#-mcp-server--ai-skill-integration)
+- [Neobit MCP Server & AI Skill Integration](#-neobit-mcp-server--ai-skill-integration)
 - [Documentation Index](#-documentation-index)
 - [Web & Frontend Standards](#-web--frontend-react-standards)
 - [Mobile & React Native Standards](#-mobile--react-native-standards)
@@ -38,15 +38,15 @@ A centralized repository containing production-tested engineering rules, archite
 
 ---
 
-## 🤖 MCP Server & AI Skill Integration
+## 🤖 `neobit` MCP Server & AI Skill Integration
 
-### 1. Using with Claude Code / Claude Desktop
-Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
+### 1. Connecting `neobit` to Claude Desktop & Claude Code
+Add `neobit` to your `claude_desktop_config.json` or `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "fullstack-standards": {
+    "neobit": {
       "command": "node",
       "args": ["/path/to/fullstack-standards-and-rules/mcp-server/dist/index.js"]
     }
@@ -54,13 +54,27 @@ Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
 }
 ```
 
-### 2. Available MCP Tools
+### 2. Connecting `neobit` to Google Antigravity
+Add to your `mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "neobit": {
+      "command": "node",
+      "args": ["/path/to/fullstack-standards-and-rules/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+### 3. Available `neobit` MCP Tools
 - `list_standards`: Lists all available engineering rules categorized by domain.
 - `get_standard(id)`: Returns full documentation and Good vs Bad examples for a specific rule.
 - `audit_code_snippet(code)`: Automated linter that scans code for inline styles, hardcoded text, raw URLs, and manual direction overrides.
 
-### 3. Using with Google Antigravity & Claude Code
-- **Antigravity Custom Skill**: `skills/fullstack-standards/SKILL.md` is ready to drop into `.agents/skills/`.
+### 4. Custom Skill for AI Agents
+- **Antigravity & Claude Skill**: `skills/fullstack-standards/SKILL.md` is ready to drop into `.agents/skills/`.
 - **Claude Code Standards**: `CLAUDE.md` can be copied directly to project roots to enforce rules during code generation.
 
 ---
@@ -96,10 +110,11 @@ Add the MCP Server to your `claude_desktop_config.json` or `.mcp.json`:
 │   ├── STATE_MANAGEMENT_AND_CACHING.md         # Zustand, React Query & Redis
 │   ├── TESTING_AND_CI_CD_STANDARDS.md          # Testing pyramid & GitHub Actions
 │   └── CODE_REVIEW_CHECKLIST.md                # PR Review Rules & Severity Matrix
-├── mcp-server/                                 # Model Context Protocol Server
+├── mcp-server/                                 # neobit MCP Server
 │   ├── src/index.ts                            # MCP Server implementation
-│   ├── package.json
-│   └── tsconfig.json
+│   ├── package.json                            # neobit-mcp v1.2.0
+│   ├── tsconfig.json
+│   └── README.md
 ├── skills/
 │   └── fullstack-standards/
 │       └── SKILL.md                            # Antigravity & Claude Custom Skill
