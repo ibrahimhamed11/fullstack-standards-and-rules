@@ -12,6 +12,22 @@ const STANDARDS_DB: Record<
   string,
   { title: string; category: string; description: string; rule: string; goodExample: string; badExample: string }
 > = {
+  'use-path-aliases': {
+    title: 'Mandatory Path Aliases',
+    category: 'Architecture & Clean Code',
+    description: 'Never use deep, fragile relative imports like ../../../.',
+    rule: 'Always use project-configured path aliases (e.g., @/..., @components/..., @utils/..., @hooks/..., @services/...).',
+    badExample: 'import { Button } from "../../../../components/common/Button";',
+    goodExample: 'import { Button } from "@/components/common/Button";',
+  },
+  'separate-ui-logic-styles': {
+    title: 'Strict 3-Way File Separation (UI, Logic, Styles)',
+    category: 'Frontend & Mobile',
+    description: 'Components must strictly isolate visual presentation, stateful logic, and styling into distinct files.',
+    rule: 'For every component: 1) <Component>.styles.ts contains styles only. 2) use<Component>.ts contains state, hooks, handlers, and side effects. 3) <Component>.tsx contains pure UI markup consuming the logic hook and styles.',
+    badExample: '// Single 400-line file containing useState, useEffect, API calls, inline styles, and JSX markup all together',
+    goodExample: '// Component.styles.ts (styles) + useComponent.ts (logic hook) + Component.tsx (pure UI view consuming hook and styles)',
+  },
   'no-inline-styles': {
     title: 'Zero Inline Styles',
     category: 'Frontend & Mobile',
@@ -21,12 +37,12 @@ const STANDARDS_DB: Record<
     goodExample: 'export const containerSx = (theme: Theme): SxProps => ({ display: "flex", color: theme.palette.primary.main });',
   },
   'no-static-text': {
-    title: 'Zero Static / Hardcoded Text',
+    title: 'Mandatory i18n Translation Keys',
     category: 'Frontend & Mobile',
-    description: 'All user-facing strings must use internationalization.',
-    rule: 'Wrap all text in t("key", "Default text") via react-i18next.',
-    badExample: '<Button>Submit Application</Button>',
-    goodExample: 'const { t } = useTranslation();\n<Button>{t("actions.submit", "Submit Application")}</Button>',
+    description: 'Zero hardcoded user-facing strings anywhere in the codebase.',
+    rule: 'All UI text, buttons, placeholders, dialog titles, errors, and toast messages must use translation keys via t("domain.key").',
+    badExample: '<Button>Submit Application</Button>\nconst errorMsg = "Failed to save user";',
+    goodExample: 'const { t } = useTranslation();\n<Button>{t("actions.submit", "Submit Application")}</Button>\nconst errorMsg = t("errors.userSaveFailed");',
   },
   'centralized-endpoints': {
     title: 'Centralized API Endpoints',
@@ -85,12 +101,12 @@ const STANDARDS_DB: Record<
     goodExample: 'A section appended to the existing README or standards document',
   },
   'minimal-comments': {
-    title: 'Minimal, Intent-Only Comments',
-    category: 'Process',
-    description: 'Comments explain why, never what the code already says.',
-    rule: 'No banner comments, no line-by-line narration, no commented-out code.',
-    badExample: '// ===== FETCH DATA =====\n// set loading to true\nsetLoading(true);',
-    goodExample: '// Backend returns UTC even when a timezone header is sent (see #4412).',
+    title: 'No Boilerplate Comments / Explain Complex Intent Only',
+    category: 'Process & Clean Code',
+    description: 'Never write obvious comments narrating standard code or component creation.',
+    rule: 'No comments for component creation, imports, state declarations, renders, handlers, or standard syntax. Only add comments for complex, non-obvious, or tricky business/algorithmic logic, using simple, clear explanations.',
+    badExample: '// Render the button\n// State for loading\nconst [loading, setLoading] = useState(false);\n// Handle submit button click\nconst handleClick = () => { ... };',
+    goodExample: '// Exness API requires epoch timestamps in milliseconds; convert before request payload (see partner doc #312).',
   },
   'delete-dead-code': {
     title: 'Delete Dead Code',
@@ -132,6 +148,12 @@ interface Rule {
 
 const RULES: Rule[] = [
   {
+    id: 'use-path-aliases',
+    severity: 'BLOCKER',
+    pattern: /(?:from|require\()\s*['"`]\.\.\/\.\.\//,
+    message: 'Deep relative import ("../../.."). Always use configured path aliases (e.g. "@/...", "@components/...", "@utils/...").',
+  },
+  {
     id: 'no-inline-styles',
     severity: 'BLOCKER',
     pattern: /style\s*=\s*\{\{/,
@@ -171,14 +193,14 @@ const RULES: Rule[] = [
   {
     id: 'minimal-comments',
     severity: 'WARNING',
-    pattern: /^\s*\/\/\s*[=*-]{4,}|^\s*\/\/\s*(const|let|function|return|if|import|<)/m,
-    message: 'Banner comment or commented-out code. Keep comments intent-only, delete dead code.',
+    pattern: /^\s*\/\/\s*[=*-]{4,}|^\s*\/\/\s*(const|let|function|return|if|import|<)|^\s*\/\/\s*(state|render|component|imports?|return|hooks?|variables?|handlers?|props?|handle\s+[a-zA-Z]+|button\s+click|fetch\s+data|set\s+state)\b/im,
+    message: 'Boilerplate, obvious comment or commented-out code. Only add comments for complex, non-obvious logic with simple explanations.',
   },
   {
     id: 'no-static-text',
     severity: 'WARNING',
     pattern: />[A-Za-z؀-ۿ]{3,}[^<{]*</,
-    message: 'Potential static text in JSX. Wrap user-facing strings in t("key").',
+    message: 'Potential static text in JSX. Wrap user-facing strings in t("domain.key").',
     requiresAbsent: /\bt\(|i18n\.t\(/,
   },
   {

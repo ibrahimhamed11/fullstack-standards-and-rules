@@ -26,21 +26,22 @@ A centralized repository containing production-tested engineering rules, archite
 
 ---
 
-## ⚡ The 13 Core Engineering Commandments
+## ⚡ The Core Engineering Commandments
 
-1. **ZERO Inline Styles**: No `style={{ ... }}` in JSX or TSX. Use modular styles, StyleSheet, or design token utilities.
-2. **ZERO Hardcoded Strings**: All user-facing strings must use internationalization (`i18n`).
-3. **ZERO Hardcoded Endpoints**: All network calls must reference a centralized `ENDPOINTS` dictionary.
-4. **ZERO Direct HTTP Calls in Presentation Components**: All networking must pass through domain API services.
-5. **ZERO Component-Level Direction Overrides**: RTL/LTR must be driven globally by the root layout/theme.
-6. **ZERO `any` Types**: Strict TypeScript contracts for all DTOs, parameters, and responses.
-7. **Strict Separation of Concerns**: Divide features into UI Views, Logic Hooks, and Modular Styles.
-8. **ZERO Emojis & Decorative Icons**: No emojis or hardcoded icon glyphs in UI, code, comments, commits, or docs. Use the project's icon component with a semantic name.
-9. **ZERO Invented Colors & Gradients**: No gradients and no color that was not taken from the design system. Every color is a theme token traceable to the design source.
-10. **ZERO New Markdown Files**: Extend the documents that already exist. A new `.md` file is created only when explicitly requested.
-11. **Minimal Comments**: Comment only non-obvious *why*. No banners, no restating the code, no commented-out blocks.
-12. **Delete Dead Code**: Unreachable code, unused exports, and orphaned files are removed in the same change, not left behind.
-13. **Reuse Over Repetition**: Anything needed in two or more files becomes one shared component, hook, or utility.
+1. **Mandatory Path Aliases**: Always use configured aliases (e.g., `@/...`, `@components/...`, `@utils/...`). Zero deep relative paths (`../../..`).
+2. **Mandatory i18n Translation Keys**: Zero hardcoded user-facing strings. All text, buttons, placeholders, dialogs, and errors must use `t('domain.key')`.
+3. **Strict 3-Way File Separation**: Every component is strictly decomposed into 3 files: `<Component>.styles.ts` (styles only), `use<Component>.ts` (logic hook only), and `<Component>.tsx` (pure UI markup).
+4. **No Boilerplate Comments**: Zero obvious narration comments (`// state`, `// render button`, `// handle click`, `// component creation`). Only comment complex, tricky, or non-obvious logic simply and concisely.
+5. **ZERO Inline Styles**: No `style={{ ... }}` in JSX or TSX. Use modular styles, StyleSheet, or design token utilities.
+6. **ZERO Hardcoded Endpoints**: All network calls must reference a centralized `ENDPOINTS` dictionary.
+7. **ZERO Direct HTTP Calls in Presentation Components**: All networking must pass through domain API services.
+8. **ZERO Component-Level Direction Overrides**: RTL/LTR must be driven globally by the root layout/theme.
+9. **ZERO `any` Types**: Strict TypeScript contracts for all DTOs, parameters, and responses.
+10. **ZERO Emojis & Decorative Icons**: No emojis or hardcoded icon glyphs in UI, code, comments, commits, or docs. Use the project's icon component with a semantic name.
+11. **ZERO Invented Colors & Gradients**: No gradients and no color that was not taken from the design system. Every color is a theme token traceable to the design source.
+12. **ZERO New Markdown Files**: Extend the documents that already exist. A new `.md` file is created only when explicitly requested.
+13. **Delete Dead Code**: Unreachable code, unused exports, and orphaned files are removed in the same change, not left behind.
+14. **Reuse Over Repetition**: Anything needed in two or more files becomes one shared component, hook, or utility.
 
 ---
 

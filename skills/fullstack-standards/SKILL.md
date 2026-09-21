@@ -9,6 +9,7 @@ This skill provides an automated code quality engine and architectural blueprint
 
 ## When to Activate This Skill
 - Designing new feature modules or refactoring legacy codebases.
+- Writing or reviewing React, React Native, and Node.js components.
 - Implementing AI engines (Gemini, Claude, OpenAI, Groq) with provider failover.
 - Setting up offline-first mobile databases (SQLite/op-sqlite), Zustand stores, or RevenueCat IAP.
 - Running automated code hygiene (dead file detection, console log stripping, SonarQube checks).
@@ -17,17 +18,39 @@ This skill provides an automated code quality engine and architectural blueprint
 
 ---
 
-## ⚡ Core Domain Blueprints
+## ⚡ Non-Negotiable Core Tenets
+
+### 1. Mandatory Path Aliases
+- **Rule**: Always import using project-configured path aliases (e.g. `@/...`, `@components/...`, `@utils/...`, `@hooks/...`, `@services/...`).
+- **Prohibited**: Never write deep or fragile relative imports like `../../../../components/Button`.
+
+### 2. Strict i18n Translation Keys (Zero Hardcoded Text)
+- **Rule**: Every user-facing string, label, button, placeholder, error message, toast, and dialog title MUST use translation keys via `t('category.key')` or `i18n.t('category.key')`.
+- **Prohibited**: Never hardcode raw Arabic, English, or any other language strings directly inside JSX/TSX or business logic.
+
+### 3. Strict 3-Way File Separation (UI, Logic, Styles)
+Every component or screen must be cleanly decomposed into 3 dedicated files:
+1. **`<Component>.styles.ts`**: Pure styles only (MUI `SxProps`, Emotion/Styled Components, or React Native `StyleSheet.create`). Zero JSX, zero business logic.
+2. **`use<Component>.ts`** (or `<Component>.logic.ts`): Pure logic only. Encapsulates `useState`, `useEffect`, custom hooks, form handling, API mutations, and side effects. Zero JSX.
+3. **`<Component>.tsx`**: Pure UI view. Calls `use<Component>()` to retrieve state/handlers and renders the visual markup using the styles. Zero inline state, zero inline styles.
+
+### 4. No Boilerplate Comments / Explain Complex Intent Only
+- **Rule**: Do NOT write obvious, redundant, or boilerplate comments narrating standard code (e.g., `// state`, `// render button`, `// handle click`, `// component creation`, `// import React`, `// return JSX`).
+- **Rule**: Only write comments when explaining complex, non-obvious, or tricky business/algorithmic decisions, using simple and concise explanations.
+
+---
+
+## ⚡ Domain Blueprints
 
 ### 1. Web (React / Next.js)
 - **NO Inline Styles**: Always extract styling to `<Component>.styles.ts` with `SxProps` or `styled()`.
-- **NO Static Text**: Every string must use `useTranslation()` (`t('key', 'Default')`).
+- **NO Static Text**: Every string must use `useTranslation()` (`t('key')`).
 - **NO Hardcoded Endpoints**: Reference `ENDPOINTS.<domain>.<route>` from `core/endpoints.ts`.
 - **NO Component-Level `dir=`**: RTL/LTR is handled globally by Root `CacheProvider` + `ThemeProvider`.
 - **Logical CSS Properties**: Use `marginInlineStart`, `paddingInlineStart` instead of physical `marginLeft`/`marginRight`.
 
 ### 2. Mobile (React Native / Expo)
-- **`StyleSheet.create` Only**: Never pass raw inline style objects to JSX.
+- **`StyleSheet.create` Only**: Never pass raw inline style objects to JSX. Always put styles in `<Component>.styles.ts`.
 - **Offline-First SQLite Architecture**: High-performance local caching using `@op-engineering/op-sqlite` + sync queues.
 - **Zustand Domain Stores**: Slice global state into isolated domain stores.
 - **Bi-directional Layout**: Use `I18nManager.isRTL` with `marginStart`, `marginEnd`, `paddingStart`.
@@ -42,20 +65,20 @@ This skill provides an automated code quality engine and architectural blueprint
 - **Zod & Centralized Errors**: Strong input validation and custom `AppError` handling middleware.
 
 ### 4. Universal (every stack)
+- **Mandatory Path Aliases**: `@/...` everywhere. No `../../..` relative import chains.
 - **No Emojis / Static Icons**: Never in UI, code, comments, commits, or docs. Icons go through the project's icon component with a semantic name.
 - **No Gradients / Invented Colors**: Only design-system tokens. No hex or `rgba()` literals and no self-chosen palette.
 - **No New Markdown Files**: Extend the existing docs unless a new file is explicitly requested.
-- **Minimal Comments**: Explain why, never what. No banners, no commented-out code.
 - **Delete Dead Code**: Unreachable code, unused exports, and orphaned files are removed, not left behind.
 - **Reuse on Second Use**: Used in two or more files means one shared component, hook, or utility.
 
 ---
 
 ## 🛠️ MCP Server Integration
-This skill also operates as an MCP Server (`mcp-server/`) exposing:
+This skill operates alongside the MCP Server (`mcp-server/`) exposing:
 - `list_standards`: Query all available engineering rules.
 - `get_standard`: Get in-depth implementation rules and examples.
-- `audit_code_snippet`: Check a single snippet for rule violations.
+- `audit_code_snippet`: Check a single snippet for rule violations (inline styles, static text, path aliases, boilerplate comments).
 - `scan_project_structure`: Read a whole project's file structure and detected stack before changing anything.
 - `audit_project`: Audit every source file at once; returns violations by file and line, orphaned files, and reuse candidates.
 
