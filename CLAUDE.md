@@ -41,6 +41,8 @@ When generating, editing, or reviewing code in any project, you MUST strictly ad
 ## 8. Universal Rules (all stacks)
 - **NEVER use emojis or hardcoded icon glyphs** in UI, source, comments, commit messages, or documentation. Render icons through the project's icon component with a semantic name.
 - **NEVER use gradients or invented colors**. Every color must be a design-system token; no hex, `rgb()`, or `rgba()` literals, and no palette you chose yourself.
+- **NEVER leave console.log / console.debug statements** in production source files. Strip them before staging/production or use an enterprise logger.
+- **NEVER use physical CSS properties (`marginLeft`, `marginRight`)**. Always use CSS logical properties (`marginInlineStart`, `marginInlineEnd`, `paddingInlineStart`, `paddingInlineEnd`) for bi-directional RTL/LTR compatibility.
 - **NEVER create new markdown files** unless explicitly asked. Extend the documents that already exist.
 - **Delete dead code you orphan**: unreachable branches, unused imports, unused exports, dead files.
 - **Extract on second use**: the moment a component, hook, or utility is needed in a second file, move it to the shared layer instead of copying it.

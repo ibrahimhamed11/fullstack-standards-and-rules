@@ -1,0 +1,250 @@
+{
+  "$schema": "./rules.schema.json",
+  "version": 2,
+  "rules": [
+    {
+      "id": "use-path-aliases",
+      "title": "Mandatory Path Aliases",
+      "category": "Architecture & Clean Code",
+      "description": "Never use deep, fragile relative imports like ../../../.",
+      "rule": "Always use project-configured path aliases (e.g., @/..., @components/..., @utils/..., @hooks/..., @services/...).",
+      "badExample": "import { Button } from \"../../../../components/common/Button\";",
+      "goodExample": "import { Button } from \"@/components/common/Button\";",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "(?:from|require\\()\\s*['\"`]\\.\\.\\/\\.\\.\\/"
+      }
+    },
+    {
+      "id": "separate-ui-logic-styles",
+      "title": "Strict 3-Way File Separation (UI, Logic, Styles)",
+      "category": "Frontend & Mobile",
+      "description": "Components must strictly isolate visual presentation, stateful logic, and styling into distinct files.",
+      "rule": "For every component: 1) <Component>.styles.ts contains styles only. 2) use<Component>.ts contains state, hooks, handlers, and side effects. 3) <Component>.tsx contains pure UI markup consuming the logic hook and styles.",
+      "badExample": "// Single 400-line file containing useState, useEffect, API calls, inline styles, and JSX markup all together",
+      "goodExample": "// Component.styles.ts (styles) + useComponent.ts (logic hook) + Component.tsx (pure UI view consuming hook and styles)"
+    },
+    {
+      "id": "no-inline-styles",
+      "title": "Zero Inline Styles",
+      "category": "Frontend & Mobile",
+      "description": "Never use style={{ ... }} in JSX or TSX.",
+      "rule": "Extract all styling to dedicated *.styles.ts files using SxProps, Theme tokens, or StyleSheet.create.",
+      "badExample": "<div style={{ display: \"flex\", color: \"#0092BE\" }}>Title</div>",
+      "goodExample": "export const containerSx = (theme: Theme): SxProps => ({ display: \"flex\", color: theme.palette.primary.main });",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "style\\s*=\\s*\\{\\{"
+      }
+    },
+    {
+      "id": "no-static-text",
+      "title": "Mandatory i18n Translation Keys",
+      "category": "Frontend & Mobile",
+      "description": "Zero hardcoded user-facing strings anywhere in the codebase.",
+      "rule": "All UI text, buttons, placeholders, dialog titles, errors, and toast messages must use translation keys via t(\"domain.key\").",
+      "badExample": "<Button>Submit Application</Button>\nconst errorMsg = \"Failed to save user\";",
+      "goodExample": "const { t } = useTranslation();\n<Button>{t(\"actions.submit\", \"Submit Application\")}</Button>\nconst errorMsg = t(\"errors.userSaveFailed\");",
+      "check": {
+        "severity": "WARNING",
+        "pattern": ">[A-Za-z؀-ۿ]{3,}[^<{]*<",
+        "requiresAbsent": "\\bt\\(|i18n\\.t\\("
+      }
+    },
+    {
+      "id": "centralized-endpoints",
+      "title": "Centralized API Endpoints",
+      "category": "API & Architecture",
+      "description": "Never write raw URL strings in components or services.",
+      "rule": "All endpoints must be declared in core/endpoints.ts under domain namespaces.",
+      "badExample": "axios.get(\"/api/v1/user/profile\")",
+      "goodExample": "axiosInstance.get(ENDPOINTS.user.profile)",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "(axios|fetch)\\s*\\.?\\s*(get|post|put|patch|delete)?\\s*\\(\\s*['\"`](https?:)?\\/api\\/",
+        "flags": "i"
+      }
+    },
+    {
+      "id": "no-direct-axios",
+      "title": "Zero Direct Axios / Fetch in UI Components",
+      "category": "Frontend & Mobile",
+      "description": "Components must never import axios directly or make raw network calls.",
+      "rule": "All networking must pass through domain API services (e.g. from @/apis or @/services).",
+      "badExample": "import axios from 'axios';\n// inside component: axios.post('/api/...', data);",
+      "goodExample": "import { updateUserProfile } from '@/apis/user';\n// inside hook: await updateUserProfile(data);",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "(?:from|require\\()\\s*['\"`]axios['\"`]",
+        "skipFile": "api|services|endpoints|client|setup|test|scripts|network|axios",
+        "skipFileFlags": "i"
+      }
+    },
+    {
+      "id": "no-component-dir",
+      "title": "Centralized RTL/LTR Theming",
+      "category": "Frontend",
+      "description": "Never hardcode dir=\"rtl\" or dir=\"ltr\" on components.",
+      "rule": "Direction is managed globally by root CacheProvider (stylis-plugin-rtl) and ThemeProvider.",
+      "badExample": "<Card dir=\"ltr\"><Box sx={{ direction: \"rtl\" }}>...</Box></Card>",
+      "goodExample": "<Card><Box>...</Box></Card>",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "dir\\s*=\\s*['\"`](rtl|ltr)['\"`]|direction\\s*:\\s*['\"`](rtl|ltr)['\"`]"
+      }
+    },
+    {
+      "id": "use-logical-properties",
+      "title": "Mandatory CSS Logical Properties",
+      "category": "Frontend & Mobile",
+      "description": "Use bi-directional logical properties instead of physical left/right properties.",
+      "rule": "Use marginInlineStart, marginInlineEnd, paddingInlineStart, paddingInlineEnd (or marginStart/marginEnd in React Native) for full RTL/LTR compatibility.",
+      "badExample": "const boxSx = { marginLeft: 16, paddingRight: 8 };",
+      "goodExample": "const boxSx = { marginInlineStart: 16, paddingInlineEnd: 8 };",
+      "check": {
+        "severity": "WARNING",
+        "pattern": "\\b(margin|padding)(Left|Right)\\b",
+        "skipFile": "test|spec|assets|node_modules",
+        "skipFileFlags": "i"
+      }
+    },
+    {
+      "id": "no-emojis-or-icon-glyphs",
+      "title": "Zero Emojis & Static Icon Glyphs",
+      "category": "Frontend & Mobile",
+      "description": "No emojis or hardcoded icon glyphs in UI, code, comments, commits, or docs.",
+      "rule": "Render icons through the project icon component with a semantic name.",
+      "badExample": "<Text>Booking confirmed ✅</Text>",
+      "goodExample": "<Icon name=\"check-circle\" /><Text>{t(\"booking.confirmed\")}</Text>",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "[\\u{1F300}-\\u{1FAFF}\\u{1F000}-\\u{1F2FF}\\u{2600}-\\u{27BF}\\u{FE0F}\\u{2B00}-\\u{2BFF}]",
+        "flags": "u"
+      }
+    },
+    {
+      "id": "no-gradients-or-invented-colors",
+      "title": "Zero Gradients & Invented Colors",
+      "category": "Frontend & Mobile",
+      "description": "Colors must be traceable to the design system, never chosen ad hoc.",
+      "rule": "Use theme tokens only. No hex/rgb()/rgba() literals, no linear-gradient, no self-picked palettes.",
+      "badExample": "background: \"linear-gradient(135deg, #667eea, #764ba2)\"",
+      "goodExample": "backgroundColor: theme.palette.primary.main",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "linear-gradient|radial-gradient|LinearGradient"
+      }
+    },
+    {
+      "id": "no-raw-color-literals",
+      "title": "Zero Raw Color Literals",
+      "category": "Frontend & Mobile",
+      "description": "Colors must come from the design system, never from a literal in a component.",
+      "rule": "Reference a theme token. Only the theme/tokens layer may hold hex, rgb() or rgba() values.",
+      "badExample": "<Box sx={{ color: \"#0092BE\", background: \"rgba(0,0,0,.08)\" }} />",
+      "goodExample": "<Box sx={{ color: theme.palette.primary.main, background: alpha(theme.palette.common.black, 0.08) }} />",
+      "check": {
+        "severity": "BLOCKER",
+        "pattern": "#[0-9a-fA-F]{3,8}\\b|rgba?\\s*\\(",
+        "skipFile": "theme|colors|tokens|palette|appStyles|assets\\/svgs|\\.svg\\.(t|j)sx?$|\\.css$",
+        "skipFileFlags": "i"
+      }
+    },
+    {
+      "id": "minimal-comments",
+      "title": "No Boilerplate Comments / Explain Complex Intent Only",
+      "category": "Process & Clean Code",
+      "description": "Never write obvious comments narrating standard code or component creation.",
+      "rule": "No comments for component creation, imports, state declarations, renders, handlers, or standard syntax. Only add comments for complex, non-obvious, or tricky business/algorithmic logic, using simple, clear explanations.",
+      "badExample": "// Render the button\n// State for loading\nconst [loading, setLoading] = useState(false);\n// Handle submit button click\nconst handleClick = () => { ... };",
+      "goodExample": "// Exness API requires epoch timestamps in milliseconds; convert before request payload (see partner doc #312).",
+      "check": {
+        "severity": "WARNING",
+        "pattern": "^\\s*\\/\\/\\s*[=*-]{4,}|^\\s*\\/\\/\\s*(const|let|function|return|if|import|<)|^\\s*\\/\\/\\s*(state|render|component|imports?|return|hooks?|variables?|handlers?|props?|handle\\s+[a-zA-Z]+|button\\s+click|fetch\\s+data|set\\s+state)\\b",
+        "flags": "im"
+      }
+    },
+    {
+      "id": "no-console-logs",
+      "title": "Zero Console Logs in Production Code",
+      "category": "Clean Code & Hygiene",
+      "description": "Do not leave debugging console statements in production codebase.",
+      "rule": "Strip console.log, console.debug, and console.info before staging/production or route through a configured logger service.",
+      "badExample": "console.log(\"User data fetched:\", data);",
+      "goodExample": "logger.debug(\"User data fetched\", { userId: data.id });",
+      "check": {
+        "severity": "WARNING",
+        "pattern": "\\bconsole\\.(log|debug|info)\\s*\\(",
+        "skipFile": "test|spec|scripts|config|main\\.(t|j)sx?$|server\\.(t|j)sx?$|logger|seed",
+        "skipFileFlags": "i"
+      }
+    },
+    {
+      "id": "no-any-types",
+      "title": "Zero Explicit any Types",
+      "category": "Universal & TypeScript",
+      "description": "Never widen a type to any to silence the compiler.",
+      "rule": "Declare a strict interface or DTO. Use unknown plus a narrowing guard when the shape is genuinely unknown.",
+      "badExample": "const handle = (payload: any) => payload.id;",
+      "goodExample": "interface Payload { id: string }\nconst handle = (payload: Payload) => payload.id;",
+      "check": {
+        "severity": "WARNING",
+        "pattern": ":\\s*any\\b|as\\s+any\\b"
+      }
+    },
+    {
+      "id": "no-doc-file-sprawl",
+      "title": "No Markdown File Sprawl",
+      "category": "Process",
+      "description": "Every change should not spawn a new summary document.",
+      "rule": "Extend the documentation that already exists. Create a new .md file only when explicitly requested.",
+      "badExample": "CHANGES_SUMMARY.md, IMPLEMENTATION_NOTES.md, FIX_REPORT.md added alongside the code change",
+      "goodExample": "A section appended to the existing README or standards document"
+    },
+    {
+      "id": "delete-dead-code",
+      "title": "Delete Dead Code",
+      "category": "Process",
+      "description": "Unreachable code, unused exports, and orphaned files are removed in the same change.",
+      "rule": "Run the AST orphan finder and remove imports/variables/exports your change orphaned.",
+      "badExample": "Legacy function kept \"just in case\", wrapped in a commented-out block",
+      "goodExample": "Dead branch deleted; git history is the archive"
+    },
+    {
+      "id": "reuse-on-second-use",
+      "title": "Reuse On Second Use",
+      "category": "Frontend & Mobile",
+      "description": "Anything needed in two or more files belongs in the shared layer.",
+      "rule": "The second consumer triggers extraction into a shared component, hook, or utility -- never a copy-paste.",
+      "badExample": "The same status badge JSX duplicated across three screens",
+      "goodExample": "components/shared/StatusBadge.tsx consumed by all three screens"
+    },
+    {
+      "id": "node-layered-architecture",
+      "title": "3-Layer Backend Architecture",
+      "category": "Backend",
+      "description": "Enforce strict separation between Controller, Service, and Repository.",
+      "rule": "Controllers handle HTTP req/res -> Services handle pure business logic -> Repositories handle DB.",
+      "badExample": "// Controller querying DB directly with SQL/Mongoose logic inside req handler",
+      "goodExample": "class UserController { async getProfile(req, res) { const user = await this.userService.getUser(req.user.id); res.json(user); } }"
+    },
+    {
+      "id": "offline-first-sqlite",
+      "title": "Offline-First SQLite Architecture",
+      "category": "Mobile (React Native)",
+      "description": "Use fast embedded SQLite for instant zero-latency local operations.",
+      "rule": "Store user data in op-sqlite with an action queue for background syncing with the REST backend.",
+      "badExample": "Fetching data over network on every screen focus without local persistence",
+      "goodExample": "Query local SQLite table first, render UI instantly, trigger background sync in parallel."
+    },
+    {
+      "id": "ai-multi-provider",
+      "title": "Multi-Provider AI Architecture",
+      "category": "Backend & AI",
+      "description": "Abstract LLM providers with automatic fallback and failover.",
+      "rule": "Implement an AIProvider interface for Claude, Gemini, OpenAI, and Groq with fallback orchestration.",
+      "badExample": "Direct hardcoded single SDK calls with no retry or provider failover",
+      "goodExample": "AIService trying primary provider (Gemini) -> fallback (Claude) -> secondary fallback (OpenAI)"
+    }
+  ]
+}

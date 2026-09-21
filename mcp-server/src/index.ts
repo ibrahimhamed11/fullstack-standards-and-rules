@@ -5,7 +5,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
-import { extname, join, relative } from 'node:path';
+import { extname, join, relative, resolve } from 'node:path';
 
 // Standards & Architecture Database
 const STANDARDS_DB: Record<
@@ -52,6 +52,14 @@ const STANDARDS_DB: Record<
     badExample: 'axios.get("/api/v1/user/profile")',
     goodExample: 'axiosInstance.get(ENDPOINTS.user.profile)',
   },
+  'no-direct-axios': {
+    title: 'Zero Direct Axios / Fetch in UI Components',
+    category: 'Frontend & Mobile',
+    description: 'Components must never import axios directly or make raw network calls.',
+    rule: 'All networking must pass through domain API services (e.g. from @/apis or @/services).',
+    badExample: 'import axios from "axios";\n// inside component: axios.post("/api/...", data);',
+    goodExample: 'import { updateUserProfile } from "@/apis/user";\n// inside hook: await updateUserProfile(data);',
+  },
   'no-component-dir': {
     title: 'Centralized RTL/LTR Theming',
     category: 'Frontend',
@@ -59,6 +67,14 @@ const STANDARDS_DB: Record<
     rule: 'Direction is managed globally by root CacheProvider (stylis-plugin-rtl) and ThemeProvider.',
     badExample: '<Card dir="ltr"><Box sx={{ direction: "rtl" }}>...</Box></Card>',
     goodExample: '<Card><Box>...</Box></Card>',
+  },
+  'use-logical-properties': {
+    title: 'Mandatory CSS Logical Properties',
+    category: 'Frontend & Mobile',
+    description: 'Use bi-directional logical properties instead of physical left/right properties.',
+    rule: 'Use marginInlineStart, marginInlineEnd, paddingInlineStart, paddingInlineEnd (or marginStart/marginEnd in React Native) for full RTL/LTR compatibility.',
+    badExample: 'const boxSx = { marginLeft: 16, paddingRight: 8 };',
+    goodExample: 'const boxSx = { marginInlineStart: 16, paddingInlineEnd: 8 };',
   },
   'offline-first-sqlite': {
     title: 'Offline-First SQLite Architecture',
@@ -92,6 +108,14 @@ const STANDARDS_DB: Record<
     badExample: 'background: "linear-gradient(135deg, #667eea, #764ba2)"',
     goodExample: 'backgroundColor: theme.palette.primary.main',
   },
+  'no-raw-color-literals': {
+    title: 'Zero Raw Color Literals',
+    category: 'Frontend & Mobile',
+    description: 'Colors must come from the design system, never from a literal in a component.',
+    rule: 'Reference a theme token. Only the theme/tokens layer may hold hex, rgb() or rgba() values.',
+    badExample: '<Box sx={{ color: "#0092BE", background: "rgba(0,0,0,.08)" }} />',
+    goodExample: '<Box sx={{ color: theme.palette.primary.main, background: alpha(theme.palette.common.black, 0.08) }} />',
+  },
   'no-doc-file-sprawl': {
     title: 'No Markdown File Sprawl',
     category: 'Process',
@@ -107,6 +131,22 @@ const STANDARDS_DB: Record<
     rule: 'No comments for component creation, imports, state declarations, renders, handlers, or standard syntax. Only add comments for complex, non-obvious, or tricky business/algorithmic logic, using simple, clear explanations.',
     badExample: '// Render the button\n// State for loading\nconst [loading, setLoading] = useState(false);\n// Handle submit button click\nconst handleClick = () => { ... };',
     goodExample: '// Exness API requires epoch timestamps in milliseconds; convert before request payload (see partner doc #312).',
+  },
+  'no-console-logs': {
+    title: 'Zero Console Logs in Production Code',
+    category: 'Clean Code & Hygiene',
+    description: 'Do not leave debugging console statements in production codebase.',
+    rule: 'Strip console.log, console.debug, and console.info before staging/production or route through a configured logger service.',
+    badExample: 'console.log("User data fetched:", data);',
+    goodExample: 'logger.debug("User data fetched", { userId: data.id });',
+  },
+  'no-any-types': {
+    title: 'Zero Explicit any Types',
+    category: 'Universal & TypeScript',
+    description: 'Never widen a type to any to silence the compiler.',
+    rule: 'Declare a strict interface or DTO. Use unknown plus a narrowing guard when the shape is genuinely unknown.',
+    badExample: 'const handle = (payload: any) => payload.id;',
+    goodExample: 'interface Payload { id: string }\nconst handle = (payload: Payload) => payload.id;',
   },
   'delete-dead-code': {
     title: 'Delete Dead Code',
@@ -172,6 +212,13 @@ const RULES: Rule[] = [
     message: 'Hardcoded API route. Reference ENDPOINTS from core/endpoints.ts.',
   },
   {
+    id: 'no-direct-axios',
+    severity: 'BLOCKER',
+    pattern: /(?:from|require\()\s*['"`]axios['"`]/,
+    message: 'Direct axios import in presentation code. Use domain-specific API service modules from api/ or services/.',
+    skipFile: /api|services|endpoints|client|setup|test|scripts|network|axios/i,
+  },
+  {
     id: 'no-emojis-or-icon-glyphs',
     severity: 'BLOCKER',
     pattern: /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F2FF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/u,
@@ -188,13 +235,27 @@ const RULES: Rule[] = [
     severity: 'BLOCKER',
     pattern: /#[0-9a-fA-F]{3,8}\b|rgba?\s*\(/,
     message: 'Raw color literal. Reference a theme token instead.',
-    skipFile: /theme|colors|tokens|palette|appStyles|assets\/svgs|\.svg\.tsx$/i,
+    skipFile: /theme|colors|tokens|palette|appStyles|assets\/svgs|\.svg\.(t|j)sx?$|\.css$/i,
   },
   {
     id: 'minimal-comments',
     severity: 'WARNING',
     pattern: /^\s*\/\/\s*[=*-]{4,}|^\s*\/\/\s*(const|let|function|return|if|import|<)|^\s*\/\/\s*(state|render|component|imports?|return|hooks?|variables?|handlers?|props?|handle\s+[a-zA-Z]+|button\s+click|fetch\s+data|set\s+state)\b/im,
     message: 'Boilerplate, obvious comment or commented-out code. Only add comments for complex, non-obvious logic with simple explanations.',
+  },
+  {
+    id: 'no-console-logs',
+    severity: 'WARNING',
+    pattern: /\bconsole\.(log|debug|info)\s*\(/,
+    message: 'Console statement in production code. Strip debugging logs before release or route through an enterprise logger.',
+    skipFile: /test|spec|scripts|config|main\.(t|j)sx?$|server\.(t|j)sx?$|logger|seed/i,
+  },
+  {
+    id: 'use-logical-properties',
+    severity: 'WARNING',
+    pattern: /\b(margin|padding)(Left|Right)\b/,
+    message: 'Physical CSS property used. Use CSS logical properties (marginInlineStart, marginInlineEnd, paddingInlineStart, paddingInlineEnd) for RTL/LTR support.',
+    skipFile: /test|spec|assets|node_modules/i,
   },
   {
     id: 'no-static-text',
@@ -277,24 +338,54 @@ function walkProject(root: string): { source: string[]; markdown: string[] } {
 }
 
 function detectStack(root: string): string[] {
-  const pkgPath = join(root, 'package.json');
-  if (!existsSync(pkgPath)) return ['unknown'];
-  let deps: Record<string, string> = {};
+  const stack = new Set<string>();
+  const pkgPaths: string[] = [];
+
+  const rootPkg = join(root, 'package.json');
+  if (existsSync(rootPkg)) pkgPaths.push(rootPkg);
+
+  // Scan 1-2 levels for subprojects / monorepo workspaces
   try {
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  } catch {
-    return ['unknown'];
+    const entries = readdirSync(root, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || SKIP_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+      const subPkg = join(root, entry.name, 'package.json');
+      if (existsSync(subPkg)) pkgPaths.push(subPkg);
+      if (entry.name === 'packages' || entry.name === 'apps') {
+        try {
+          const nested = readdirSync(join(root, entry.name), { withFileTypes: true });
+          for (const n of nested) {
+            if (n.isDirectory()) {
+              const nestedPkg = join(root, entry.name, n.name, 'package.json');
+              if (existsSync(nestedPkg)) pkgPaths.push(nestedPkg);
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+
+  if (pkgPaths.length === 0) return ['unknown'];
+
+  for (const pkgPath of pkgPaths) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+      const deps: Record<string, string> = { ...pkg.dependencies, ...pkg.devDependencies };
+      if (deps['react-native']) stack.add('React Native');
+      if (deps['next']) stack.add('Next.js');
+      if (deps['react'] && !deps['react-native'] && !deps['next']) stack.add('React (web)');
+      if (deps['express']) stack.add('Express');
+      if (deps['@nestjs/core']) stack.add('NestJS');
+      if (deps['mongoose'] || deps['mongodb']) stack.add('MongoDB');
+      if (deps['@reduxjs/toolkit']) stack.add('Redux Toolkit');
+      if (deps['zustand']) stack.add('Zustand');
+      if (deps['@tanstack/react-query']) stack.add('TanStack Query');
+      if (deps['tailwindcss']) stack.add('Tailwind CSS');
+      if (deps['@mui/material']) stack.add('Material UI');
+    } catch {}
   }
-  const stack: string[] = [];
-  if (deps['react-native']) stack.push('React Native');
-  if (deps['next']) stack.push('Next.js');
-  if (deps['react'] && !deps['react-native'] && !deps['next']) stack.push('React (web)');
-  if (deps['express'] || deps['@nestjs/core']) stack.push('Node backend');
-  if (deps['@reduxjs/toolkit']) stack.push('Redux Toolkit');
-  if (deps['zustand']) stack.push('Zustand');
-  if (deps['@tanstack/react-query']) stack.push('TanStack Query');
-  return stack.length ? stack : ['unknown'];
+
+  return stack.size ? Array.from(stack) : ['unknown'];
 }
 
 // Files whose basename is never referenced by an import elsewhere
@@ -312,9 +403,26 @@ function findOrphans(root: string, source: string[]): string[] {
       imported.add(spec.split('/').pop()!.replace(/\.(t|j)sx?$/, ''));
     }
   }
+
+  const WHITELIST_BASENAMES = new Set([
+    'index', 'app', 'main', 'server',
+    // Next.js App Router & Pages Router conventions
+    'page', 'layout', 'loading', 'error', 'not-found', 'template', 'route', 'default', 'global-error',
+    '_app', '_document', '_error', 'middleware',
+  ]);
+
   return source.filter(file => {
+    // Exclude test files, configs, scripts, migrations, seeds, type declarations
+    if (
+      /\.config\.(t|j)sx?$|\.d\.ts$|setupTests|jest\.setup/i.test(file) ||
+      /(?:^|\/)(?:__tests__|tests?|specs?|scripts|migrations|seeds|dist|build|public)\//i.test(file) ||
+      /\.(test|spec)\.(t|j)sx?$/i.test(file)
+    ) {
+      return false;
+    }
+
     const name = file.split('/').pop()!.replace(/\.(t|j)sx?$/, '');
-    if (name === 'index' || /^(App|main|server|jest\.config|metro\.config)$/.test(name)) return false;
+    if (WHITELIST_BASENAMES.has(name.toLowerCase())) return false;
     return !imported.has(name);
   });
 }
@@ -343,7 +451,7 @@ function findReuseCandidates(root: string, source: string[]): Record<string, str
 const server = new Server(
   {
     name: 'neobit',
-    version: '1.2.0',
+    version: '1.3.0',
   },
   {
     capabilities: {
@@ -364,7 +472,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             category: {
               type: 'string',
-              description: 'Optional filter by category (Frontend, Mobile, Backend, API, AI)',
+              description: 'Optional filter by category (Frontend, Mobile, Backend, API, AI, Clean Code)',
             },
           },
         },
@@ -377,7 +485,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             id: {
               type: 'string',
-              description: 'Standard ID (e.g. no-inline-styles, no-emojis-or-icon-glyphs, no-gradients-or-invented-colors, reuse-on-second-use, node-layered-architecture)',
+              description: 'Standard ID (e.g. no-inline-styles, no-emojis-or-icon-glyphs, no-gradients-or-invented-colors, no-raw-color-literals, no-any-types, no-direct-axios, no-console-logs, use-logical-properties, reuse-on-second-use, node-layered-architecture)',
             },
           },
           required: ['id'],
@@ -414,8 +522,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'audit_file',
+        description: 'Audits a single file on disk against all engineering standards. Returns line-by-line violations.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'Absolute or relative path to the file to audit.',
+            },
+          },
+          required: ['path'],
+        },
+      },
+      {
         name: 'audit_code_snippet',
-        description: 'Audits a code snippet for anti-patterns (inline styles, hardcoded text, raw URLs, dir overrides).',
+        description: 'Audits a code snippet for anti-patterns (inline styles, hardcoded text, raw URLs, dir overrides, raw colors, console logs, axios in UI).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -461,6 +583,30 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
     }
     return {
       content: [{ type: 'text', text: JSON.stringify(standard, null, 2) }],
+    };
+  }
+
+  if (name === 'audit_file') {
+    const filePath = args?.path as string;
+    const absPath = filePath ? resolve(filePath) : '';
+    if (!absPath || !existsSync(absPath)) {
+      return { content: [{ type: 'text', text: `File not found: ${filePath}` }], isError: true };
+    }
+    let code: string;
+    try {
+      code = readFileSync(absPath, 'utf8');
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Error reading file ${filePath}: ${e.message}` }], isError: true };
+    }
+    const findings = auditCode(code, absPath);
+    if (findings.length === 0) {
+      return { content: [{ type: 'text', text: `Audit passed for ${filePath}: no violations detected.` }] };
+    }
+    const text = findings
+      .map(f => `[${f.severity}] ${f.rule} (line ${f.line}): ${f.message}`)
+      .join('\n');
+    return {
+      content: [{ type: 'text', text: `Found ${findings.length} violation(s) in ${filePath}:\n\n${text}` }],
     };
   }
 

@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Neobit rule registry",
+  "description": "Rules loaded by the neobit MCP server. Edit this file to add or change a rule; no rebuild is needed.",
+  "type": "object",
+  "required": ["rules"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "rules": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/rule" }
+    }
+  },
+  "definitions": {
+    "rule": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Stable identifier. Reusing an id in a project file overrides the shared rule."
+        },
+        "title": { "type": "string" },
+        "category": {
+          "type": "string",
+          "description": "Groups the rule in list_standards, e.g. 'Frontend & Mobile', 'Backend & AI', 'Universal'."
+        },
+        "description": {
+          "type": "string",
+          "description": "Also used as the violation message when the rule is enforced, so write it as the thing to fix."
+        },
+        "rule": { "type": "string", "description": "What to do instead." },
+        "badExample": { "type": "string" },
+        "goodExample": { "type": "string" },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false in a project file to switch an inherited rule off."
+        },
+        "check": {
+          "type": "object",
+          "description": "Omit for guidance that cannot be checked mechanically; the rule is then documentation-only.",
+          "required": ["severity", "pattern"],
+          "properties": {
+            "severity": { "enum": ["BLOCKER", "WARNING"] },
+            "pattern": {
+              "type": "string",
+              "description": "JavaScript regex source. A file matching it is reported."
+            },
+            "flags": { "type": "string", "description": "Regex flags, e.g. 'i', 'm', 'u'." },
+            "skipFile": {
+              "type": "string",
+              "description": "Regex over the file path; matching files are exempt (e.g. the theme layer for colour rules)."
+            },
+            "skipFileFlags": { "type": "string" },
+            "requiresAbsent": {
+              "type": "string",
+              "description": "Only report when this pattern is absent from the file — lets a rule stand down when the correct API is already in use."
+            },
+            "requiresAbsentFlags": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
