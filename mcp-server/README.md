@@ -60,10 +60,10 @@ Audits every source file in a project against all rules in one call.
 - Skips `node_modules`, `.git`, `dist`, `build`, `ios`, `android`, `Pods`, `coverage`, `patched_node_modules`.
 - The file list is capped at 100 entries; the response reports how many were omitted.
 
-### 5. `audit_code_snippet`
-Scans a single snippet for anti-patterns:
 - Inline styles (`style={{ ... }}`)
-- Hardcoded text in JSX
+- Hardcoded text in JSX (must use i18n translation keys `t('key')`)
+- Deep fragile relative imports (`../../..`, must use path aliases `@/...`)
+- Boilerplate narration comments (`// state`, `// render`, etc.)
 - Hardcoded API URLs
 - Component-level `dir="rtl"` / `dir="ltr"` overrides
 - Emojis and static icon glyphs
